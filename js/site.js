@@ -55,9 +55,32 @@
     progress.style.transform = "scaleX(" + ratio + ")";
   }
 
+  var pullSections = document.querySelectorAll("main > section");
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function updatePull() {
+    if (reduceMotion) return;
+    var headerH = header ? header.offsetHeight : 0;
+    for (var i = 0; i < pullSections.length; i++) {
+      var section = pullSections[i];
+      if (section.classList.contains("reveal") && !section.classList.contains("is-in")) continue;
+      var rect = section.getBoundingClientRect();
+      if (rect.bottom < headerH - 40 || rect.top > window.innerHeight + 40) {
+        section.style.transform = "";
+        continue;
+      }
+      var through = (headerH - rect.top) / Math.max(rect.height, 1);
+      var wave = Math.sin(Math.max(0, Math.min(1, through)) * Math.PI);
+      var stretch = 1 + wave * 0.14;
+      var drag = wave * 72;
+      section.style.transform = "translate3d(0," + drag.toFixed(1) + "px,0) scaleY(" + stretch.toFixed(3) + ")";
+    }
+  }
+
   function updateNav() {
     if (header) header.classList.toggle("is-scrolled", window.scrollY > 8);
     updateProgress();
+    updatePull();
     var mark = window.scrollY + 140;
     var id = "";
     sections.forEach(function (section) {
@@ -77,8 +100,8 @@
   window.addEventListener("resize", updateNav);
   if (wideNav.addEventListener) wideNav.addEventListener("change", updateNav);
 
-  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!reduceMotion) {
+    document.documentElement.classList.add("pull");
     var revealNodes = document.querySelectorAll(
       "main > section:not(.hero):not(#screens):not(#connect):not(#setup), #screens .screen, #screens > .wrap > .kicker, #screens > .wrap > h2, #screens > .wrap > .lede, #connect .path, #connect > .wrap > .kicker, #connect > .wrap > h2, #connect > .wrap > .lede, #setup .path, #setup > .wrap > .kicker, #setup > .wrap > h2, #setup > .wrap > .lede"
     );
