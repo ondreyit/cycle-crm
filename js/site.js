@@ -46,8 +46,18 @@
     indicator.style.width = box.width + "px";
   }
 
+  var progress = document.querySelector("[data-scroll-progress]");
+
+  function updateProgress() {
+    if (!progress) return;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    var ratio = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    progress.style.transform = "scaleX(" + ratio + ")";
+  }
+
   function updateNav() {
     if (header) header.classList.toggle("is-scrolled", window.scrollY > 8);
+    updateProgress();
     var mark = window.scrollY + 140;
     var id = "";
     sections.forEach(function (section) {
@@ -66,6 +76,28 @@
   window.addEventListener("scroll", updateNav, { passive: true });
   window.addEventListener("resize", updateNav);
   if (wideNav.addEventListener) wideNav.addEventListener("change", updateNav);
+
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduceMotion) {
+    var revealNodes = document.querySelectorAll(
+      "main > section:not(.hero):not(#screens):not(#connect):not(#setup), #screens .screen, #screens > .wrap > .kicker, #screens > .wrap > h2, #screens > .wrap > .lede, #connect .path, #connect > .wrap > .kicker, #connect > .wrap > h2, #connect > .wrap > .lede, #setup .path, #setup > .wrap > .kicker, #setup > .wrap > h2, #setup > .wrap > .lede"
+    );
+    var revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-in");
+        revealObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.16, rootMargin: "0px 0px -48px 0px" });
+    Array.prototype.forEach.call(revealNodes, function (node) {
+      if (node.getBoundingClientRect().top < window.innerHeight * 0.92) {
+        node.classList.add("is-in");
+        return;
+      }
+      node.classList.add("reveal");
+      revealObserver.observe(node);
+    });
+  }
 
   var modal = document.querySelector("[data-modal]");
   var form = document.querySelector("[data-walkthrough-form]");
